@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { updateCauseRaisedAmount } from "@/lib/firebase/actions/progress";
 import { getSessionId } from "@/lib/helpers";
 
-const DEFAULT_MATIC_TO_NAIRA_RATE = 302.51;
+const DEFAULT_MATIC_TO_NAIRA_RATE = 302.51; // Fallback rate
 
 declare global {
   interface Window {
@@ -30,6 +30,19 @@ interface MaticDonationButtonProps {
   onDonationSuccess?: (amountInNaira: number) => void;
 }
 
+const fetchMaticToNairaRate = async (): Promise<number> => {
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=ngn"
+    );
+    const data = await response.json();
+    return data["matic-network"].ngn || DEFAULT_MATIC_TO_NAIRA_RATE;
+  } catch (error) {
+    console.error("Error fetching MATIC rate:", error);
+    return DEFAULT_MATIC_TO_NAIRA_RATE;
+  }
+};
+
 export default function MaticDonationButton({
   causeId,
   onDonationSuccess,
@@ -38,7 +51,9 @@ export default function MaticDonationButton({
   const [nairaEquivalent, setNairaEquivalent] = useState<string>("30.25");
   const [formattedNairaEquivalent, setFormattedNairaEquivalent] =
     useState<string>("30.25");
-  const [exchangeRate] = useState<number>(DEFAULT_MATIC_TO_NAIRA_RATE);
+  const [exchangeRate, setExchangeRate] = useState<number>(
+    DEFAULT_MATIC_TO_NAIRA_RATE
+  );
   const [isDonating, setIsDonating] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +61,26 @@ export default function MaticDonationButton({
   const [isLoadingAddress, setIsLoadingAddress] = useState<boolean>(true);
   const [inputMode, setInputMode] = useState<"matic" | "naira">("matic");
   const params = useParams();
+
+  // Fetch exchange rate on component mount
+  useEffect(() => {
+    const getExchangeRate = async () => {
+      const rate = await fetchMaticToNairaRate();
+      setExchangeRate(rate);
+      // Update naira equivalent with new rate
+      const amount = parseFloat(donationAmount);
+      if (!isNaN(amount)) {
+        const nairaValue = (amount * rate).toFixed(2);
+        setNairaEquivalent(nairaValue);
+        setFormattedNairaEquivalent(formatNumberWithCommas(nairaValue));
+      }
+    };
+    getExchangeRate();
+
+    // Refresh rate every 5 minutes
+    const interval = setInterval(getExchangeRate, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Format number with commas
   const formatNumberWithCommas = (value: string): string => {
@@ -120,8 +155,8 @@ export default function MaticDonationButton({
 
         const userData = userDoc.data();
 
-        if (userData.cryptoWallets?.["matic"]) {
-          setRecipientAddress(userData.cryptoWallets["matic"]);
+        if (userData.cryptoWallets?.["matic-amoy"]) {
+          setRecipientAddress(userData.cryptoWallets["matic-amoy"]);
         } else {
           setRecipientAddress(null);
         }
@@ -166,24 +201,20 @@ export default function MaticDonationButton({
         paymentMethod: "MATIC",
         status: "completed",
         timestamp: serverTimestamp(),
-        network: "Polygon Mainnet",
+        network: "Polygon Amoy Testnet",
         currency: "MATIC",
+        walletType: "matic-amoy",
       });
-
-      console.log(
-        "Transaction logged with recipient address:",
-        recipientAddress
-      );
     } catch (error) {
       console.error("Error logging transaction:", error);
     }
   };
 
-  const switchToMainnet = async () => {
+  const switchToAmoyTestnet = async () => {
     try {
       await window.ethereum?.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0x89" }], // Polygon mainnet chain ID
+        params: [{ chainId: "0x13882" }], // Polygon Amoy testnet chain ID
       });
     } catch (switchError: any) {
       if (switchError.code === 4902) {
@@ -192,25 +223,27 @@ export default function MaticDonationButton({
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: "0x89",
-                chainName: "Polygon Mainnet",
+                chainId: "0x13882",
+                chainName: "Polygon Amoy Testnet",
                 nativeCurrency: {
                   name: "MATIC",
                   symbol: "MATIC",
                   decimals: 18,
                 },
-                rpcUrls: ["https://polygon-rpc.com/"],
-                blockExplorerUrls: ["https://polygonscan.com/"],
+                rpcUrls: ["https://rpc-amoy.polygon.technology/"],
+                blockExplorerUrls: ["https://amoy.polygonscan.com/"],
               },
             ],
           });
         } catch (addError) {
-          console.error("Failed to add Polygon network:", addError);
-          throw new Error("Please add Polygon network to MetaMask manually");
+          console.error("Failed to add Polygon Amoy network:", addError);
+          throw new Error(
+            "Please add Polygon Amoy Testnet to MetaMask manually"
+          );
         }
       } else {
-        console.error("Failed to switch to Polygon network:", switchError);
-        throw new Error("Failed to switch to Polygon network");
+        console.error("Failed to switch to Polygon Amoy network:", switchError);
+        throw new Error("Failed to switch to Polygon Amoy network");
       }
     }
   };
@@ -241,11 +274,11 @@ export default function MaticDonationButton({
       await window.ethereum.request({ method: "eth_requestAccounts" });
 
       try {
-        await switchToMainnet();
+        await switchToAmoyTestnet();
       } catch (networkError) {
         console.error("Network error:", networkError);
         throw new Error(
-          "Please switch to Polygon Mainnet in your wallet and try again"
+          "Please switch to Polygon Amoy Testnet in your wallet and try again"
         );
       }
 
@@ -417,7 +450,9 @@ export default function MaticDonationButton({
             disabled={isDonating}
           />
         </div>
-        <p className="mt-1 text-xs text-gray-500">Using Polygon Mainnet</p>
+        <p className="mt-1 text-xs text-gray-500">
+          Using Polygon Amoy Testnet (1 MATIC ≈ ₦{exchangeRate.toFixed(2)})
+        </p>
       </div>
 
       <button
@@ -442,7 +477,7 @@ export default function MaticDonationButton({
           <p className="mt-1 text-sm">
             Transaction:{" "}
             <a
-              href={`https://polygonscan.com/tx/${txHash}`}
+              href={`https://amoy.polygonscan.com/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-800"

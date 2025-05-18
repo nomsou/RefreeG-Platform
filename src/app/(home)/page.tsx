@@ -20,7 +20,7 @@ export default async function Home() {
       <Hero />
       <WhyUseUs />
 
-      <UrgentCauses />
+      {/* <UrgentCauses /> */}
 
       {/* <div className="w-full  px-10 py-8 bg-white border-b">
         <div className="flex justify-between items-center mb-6">

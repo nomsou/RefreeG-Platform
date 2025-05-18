@@ -38,7 +38,6 @@ export function ConnectWalletButton({ onConnected }: ConnectWalletButtonProps) {
       }
 
       const provider = new BrowserProvider(window.ethereum);
-      const network = await provider.getNetwork();
       const signer = await provider.getSigner();
 
       const userId = await getSessionId();
@@ -46,21 +45,22 @@ export function ConnectWalletButton({ onConnected }: ConnectWalletButtonProps) {
         throw new Error("User session not found");
       }
 
+      // Save with 'matic-amoy' as the key
       await setDoc(
         doc(db, "users", userId),
         {
           cryptoWallets: {
-            [network.name]: address,
+            "matic-amoy": address, // Changed from network.name to explicit "matic-amoy"
           },
         },
         { merge: true }
       );
 
       if (onConnected) {
-        onConnected(address, network.name);
+        onConnected(address, "matic-amoy");
       }
 
-      return { address, network: network.name };
+      return { address, network: "matic-amoy" };
     } catch (err) {
       console.error("Wallet connection error:", err);
       const errorMessage =
@@ -79,7 +79,7 @@ export function ConnectWalletButton({ onConnected }: ConnectWalletButtonProps) {
         disabled={isConnecting}
         className="w-full"
       >
-        {isConnecting ? "Connecting..." : "Connect Wallet"}
+        {isConnecting ? "Connecting..." : "Connect Polygon Wallet"}
       </Button>
 
       {error && <div className="text-sm text-red-500 mt-2">{error}</div>}
