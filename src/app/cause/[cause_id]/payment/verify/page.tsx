@@ -82,7 +82,7 @@ export default function PaymentVerification({ searchParams }: { searchParams: { 
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={() => router.push('/cause')}
+                                    onClick={() => router.push('/')}
                                     className="w-full border-palette-primary text-palette-primary hover:bg-primaryShades-100"
                                 >
                                     Browse More Causes
