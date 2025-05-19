@@ -85,7 +85,7 @@ export function Navbar ({ userSession, profile }: { userSession?: boolean, profi
 
       {/* Large Screen Navigation */}
       <nav className="hidden lg:flex ml-auto gap-6">
-        <div className="relative">
+        {/* <div className="relative">
           <MenuLink
             href="#"
             onClick={toggleSearchModal}
@@ -94,9 +94,9 @@ export function Navbar ({ userSession, profile }: { userSession?: boolean, profi
             <Image src={Search} height={20} width={20} alt="search" />
             Search
           </MenuLink>
-        </div>
+        </div> */}
 
-        <MenuLink href="#" className="hover:bg-blue-100">
+        <MenuLink href="/#causes-section" className="hover:bg-blue-100">
           Explore causes
         </MenuLink>
 
