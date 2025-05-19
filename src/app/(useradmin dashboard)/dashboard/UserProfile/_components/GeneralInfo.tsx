@@ -84,7 +84,7 @@ export default function GeneralInfo({ user }: { user: User }) {
         <span className={isEditing ? "text-gray-500" : "text-black"}>
           General Information
         </span>
-        {isEditing && <span className="text-black"> &gt; Edit Profile</span>}
+        {isEditing && <span className="text-black"> Edit Profile</span>}
         <Button
           onClick={() => (isEditing ? handleSaveChanges() : setIsEditing(true))}
           variant={isEditing ? "default" : "outline"}
