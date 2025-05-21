@@ -17,7 +17,7 @@ export default function DonationForm({ cause, user,  }: { cause: Cause, user: Us
   
   console.log(serviceFee)
   const totalAmount = donation + serviceFee;
-  const PayStackFee = 100;
+  const PayStackFee = 10;
 
   useEffect(() => {
     setServiceFee(calculateServiceFee(donation));
